@@ -4,6 +4,6 @@ const { urlShortner, getUrl } = require('../controllers/urlController')
 
 
 router.post("/url/shorten", urlShortner)
-router.get("/url/:urlCode", getUrl)
+router.get("/:urlCode", getUrl)
 
 module.exports = router
