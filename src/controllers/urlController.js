@@ -1,77 +1,100 @@
-const urlModel = require("../models/urlModel")
+const urlModel = require("../models/urlModel");
 const validUrl = require('valid-url');
 const shortid = require('shortid');
+const { isValid } = require("../utils/validation");
 const redis = require('redis');
+const { promisify } = require("util");
 
-const redisUse = redis.createClient();
+const redisClient = redis.createClient(
+  10006,
+  "redis-10006.c301.ap-south-1-1.ec2.cloud.redislabs.com",
+  { no_ready_check: true }
+);
+redisClient.auth("G7a7d9ZeQxqwBIeUSjcwqpphKQjWCS5K", function (err) {
+  if (err) throw err;
+});
+
+redisClient.on("connect", async function () {
+  console.log("Connected to Redis");
+});
+
+const SET_ASYNC = promisify(redisClient.SET).bind(redisClient);
+const GET_ASYNC = promisify(redisClient.GET).bind(redisClient);
 
 const urlShortner = async function (req, res) {
-    try {
-      const { longUrl } = req.body;
-      if (!validUrl.isWebUri(longUrl)) {
-        return res.status(400).json({ error: 'Invalid URL' });
-      }
-  
-      // Check if the URL exists in the cache
-      redisUse.get(longUrl, async (error, cachedUrl) => {
-        if (error) {
-          console.error('Error retrieving cached URL:', error);
-        }
-  
-        if (cachedUrl) {
-          // URL found in cache, return the existing short URL
-          return res.status(200).send({ shortUrl: cachedUrl });
-        }
-  
-        // Check if the URL already exists in the database
-        let url = await urlModel.findOne({ longUrl: longUrl });
-  
-        if (url) {
-          // URL exists in the database, cache the short URL
-          redisUse.set(longUrl, url.shortUrl, 'EX', 24 * 60 * 60); // Cache for 24 hours
-          return res.status(200).send({ shortUrl: url.shortUrl });
-        }
-  
-        const baseUrl = 'http://localhost:3000'; // Replace with your application's base URL
-        const urlCode = shortid.generate(longUrl);
-        const shortUrl = `${baseUrl}/${urlCode}`;
-  
-        // Create a new URL document and save it to the database
-        url = await urlModel.create({
-          urlCode,
-          longUrl,
-          shortUrl,
-        });
-  
-        // Cache the short URL
-        redisUse.set(longUrl, url.shortUrl, 'EX', 24 * 60 * 60); // Cache for 24 hours
-  
-        res.status(201).send({ status: true, data: url });
-      });
-    } catch (error) {
-      return res.status(500).send({ status: false, message: error.message });
+  try {
+    const { longUrl } = req.body;
+    if (!isValid(longUrl)) {
+      return res.status(400).send({ status: false, message: "longUrl must be a string" });
     }
-  };
+    if (!validUrl.isWebUri(longUrl)) {
+      return res.status(400).send({ error: 'Invalid URL' });
+    }
+
+    // Check if the URL already exists in the cache
+    let cacheUrl = await GET_ASYNC(longUrl);
+    if (cacheUrl) {
+      const { shortUrl } = JSON.parse(cacheUrl);
+      return res.status(200).send({ status: true, message: "Already available", shortUrl });
+    }
+
+    // Check if the URL already exists in the database
+    let url = await urlModel.findOne({ longUrl: longUrl });
+    if (url) {
+      // Cache the URL for 24 hours
+      await SET_ASYNC(longUrl, JSON.stringify({ urlCode: url.urlCode, shortUrl: url.shortUrl }), 'EX', 24 * 60 * 60);
+      return res.status(200).send({ status: true, message: "Already available", shortUrl: url.shortUrl });
+    }
+
+    const baseUrl = 'http://localhost:3000'; // Replace with your application's base URL
+    const urlCode = shortid.generate(longUrl);
+    const shortUrl = `${baseUrl}/${urlCode}`;
+
+    // Create a new URL document and save it to the database
+    url = await urlModel.create({
+      urlCode,
+      longUrl,
+      shortUrl,
+    });
+
+    // Cache the URL for 24 hours
+    await SET_ASYNC(longUrl, JSON.stringify({ urlCode, shortUrl }), 'EX', 24 * 60 * 60);
+
+    res.status(201).send({ status: true, data: url });
+  } catch (error) {
+    return res.status(500).send({ status: false, message: error.message });
+  }
+};
+
 const getUrl = async function (req, res) {
-    try {
-        const { urlCode } = req.params;
-        // console.log(urlCode)
+  try {
+    const { urlCode } = req.params;
 
-        // Find the URL document in the database
-        const url = await urlModel.findOne({ urlCode: urlCode });
-        // console.log(url)
-
-        if (url) {
-            // Redirect to the original URL
-            return res.redirect(url.longUrl);
-        } else {
-            // URL not found in the database
-            return res.status(404).send({ error: 'URL not found' });
-        }
-    } catch (err) {
-        console.error(err);
-        return res.status(500).send({ error: 'Server Error' });
+    // Check if the URL exists in the cache
+    let cachedUrl = await GET_ASYNC(urlCode);
+    if (cachedUrl) {
+      const { longUrl } = JSON.parse(cachedUrl);
+      // Redirect to the original URL
+      return res.redirect(longUrl);
     }
-}
-module.exports.urlShortner = urlShortner
-module.exports.getUrl = getUrl
+
+    // Find the URL document in the database
+    const url = await urlModel.findOne({ urlCode: urlCode });
+
+    if (url) {
+      // Cache the URL for 24 hours
+      await SET_ASYNC(urlCode, JSON.stringify({ longUrl: url.longUrl }), 'EX', 24 * 60 * 60);
+      // Redirect to the original URL
+      return res.redirect(url.longUrl);
+    } else {
+      // URL not found in the cache or database
+      return res.status(404).send({ error: 'URL not found' });
+    }
+  } catch (err) {
+    console.error(err);
+    return res.status(500).send({ error: 'Server Error' });
+  }
+};
+
+module.exports.urlShortner = urlShortner;
+module.exports.getUrl = getUrl;

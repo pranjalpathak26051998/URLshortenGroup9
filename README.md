@@ -1,144 +1,82 @@
-# Technetium - Backend Cohort Repository
+#Scalable URL Shortener Project
 
-Welcome to the Technetium repository for the backend cohort! This repository contains the code for the Blogging Site Mini Project. The project is divided into two phases and includes models, APIs, authentication, authorization, and testing.
+This project aims to develop a scalable URL shortener service that generates shorter aliases for long URLs. The shortened aliases, also known as "short links," redirect users to the original URL when accessed. This helps save space, prevents mistyping of long URLs, and provides easy tracking of individual links.
+Phase I
+Overview
 
-## Phase I
+#URL shortening is a common practice used to create shorter and more manageable URLs. In this phase, we will focus on the core functionality of the URL shortener service.
 
-### Models
+#Models
 
-- **Author Model:**
-  - `fname` (mandatory)
-  - `lname` (mandatory)
-  - `title` (mandatory, enum [Mr, Mrs, Miss])
-  - `email` (mandatory, valid email, unique)
-  - `password` (mandatory)
+The project uses a Url model to store the URLs in the database. The model has the following attributes:
 
-- **Blogs Model:**
-  - `title` (mandatory)
-  - `body` (mandatory)
-  - `authorId` (mandatory, references author model)
-  - `tags` (array of strings)
-  - `category` (string, mandatory)
-  - `subcategory` (array of strings, e.g., [technology-[web development, mobile development, AI, ML, etc]])
-  - `createdAt`, `updatedAt`, `deletedAt` (when the document is deleted)
-  - `isDeleted` (boolean, default: false)
-  - `publishedAt` (when the blog is published)
-  - `isPublished` (boolean, default: false)
+    urlCode (mandatory, unique, lowercase, trim): A unique identifier for the shortened URL.
+    longUrl (mandatory, valid URL): The original URL.
+    shortUrl (mandatory, unique): The shortened URL.
 
-### Author APIs
+#API Endpoints
 
-- `POST /authors`: Create an author - at least 5 authors
-- `POST /blogs`: Create a blog document from the request body. Get `authorId` in the request body only.
-- `GET /blogs`: Returns all blogs in the collection that aren't deleted and are published. Supports filters by author ID, category, and list of tags.
-- `PUT /blogs/:blogId`: Updates a blog by changing its title, body, adding tags, adding a subcategory, or changing its publish status.
-- `DELETE /blogs/:blogId`: Marks a blog as deleted.
-- `DELETE /blogs?queryParams`: Deletes blog documents based on query parameters.
+    POST /url/shorten
+        Creates a short URL for the provided original URL.
+        
+        Example request body:
+        {
+          "longUrl": "http://example.com/very-long-url"
+        }
 
-## Phase II
+        Example response:
 
-### Authentication and Authorization
+        {
+          "status": true,
+          "data": {
+            "longUrl": "http://example.com/very-long-url",
+            "shortUrl": "http://localhost:3000/abc123",
+            "urlCode": "abc123"
+          }
+        }
 
-- `POST /login`: Allows an author to login with their email and password. Returns a JWT token containing the authorId.
-- Authentication: Validates the JWT token before calling protected endpoints. Protects routes for creating a blog, editing a blog, getting the list of blogs, and deleting a blog(s).
-- Authorization: Only the owner of the blogs can edit or delete them.
+        Returns HTTP status 400 for an invalid request.
 
-### Testing (Self-evaluation During Development)
+    GET /:urlCode
+        Redirects to the original URL corresponding to the provided urlCode.
+        Returns a suitable error message for a URL not found.
+        Returns HTTP status 400 for an invalid request.
 
-- Postman collection: Use the provided Postman collection named "Project 1 Blogging" for testing.
-- Each API should have a corresponding request in the collection.
-- Collections and requests should be appropriately named.
-- Each team member should have their tests in a running state.
+#Testing
 
-## Response Structures
+    Use Postman to test the API endpoints.
+    Create a new collection named "Project 2 URL Shortener."
+    Add a request to the collection for each API endpoint.
+    Ensure that each request is named correctly.
 
-- Successful Response:
-{
-"status": true,
-"data": { ... }
-}
+#Phase II
 
+#Caching
 
+In this phase, we introduce caching to optimize the retrieval of newly created short URLs within the first 24 hours.
 
-- Error Response:
-{
-"status": false,
-"message": "..."
-}
+    Implement caching logic to store and retrieve the long URLs associated with the short URLs.
+    Use caching to minimize database calls while fetching the shortened URLs.
 
+#Dependencies
 
+The project uses the following dependencies:
 
-## Collections
+    ->dotenv: Loads environment variables from a .env file.
+    ->shortid: Generates unique short IDs for the URL codes.
+    ->valid-url: Validates the format of the original URLs.
+    ->redis: A caching solution for storing and retrieving data.
 
-**Author:**
-{
-"status": true,
-"data": {
-"_id": "63edd170875e5650d89ab9b8",
-"fname": "John",
-"lname": "Wick",
-"title": "Mr",
-"email": "john4614@gmail.com",
-"password": "pass1234",
-"createdAt": "2023-02-16T06:47:12.993Z",
-"updatedAt": "2023-02-16T06:47:12.993Z",
-"__v": 0
-}
-}
+Make sure to install these dependencies by running npm install before running the project.
+Setup Instructions
 
+    Clone the project repository.
+    Install the required dependencies using npm install.
+    Configure the environment variables by creating a .env file.
+    Start the server using npm start.
 
+Please refer to the documentation for detailed instructions on environment variable configuration, running the server, and API usage.
 
-**Blogs:**
-{
-"status": true,
-"data": {
-"title": "How to win friends",
-"body": "Blog body",
-"tags": ["Book", "Friends", "Self help"],
-"category": "Book",
-"subcategory": ["Non fiction", "Self Help"],
-"published": false,
-"publishedAt": "",
-"deleted": false,
-"deletedAt": "",
-"createdAt": "2021-09-17T04:25:07.803Z",
-"updatedAt": "2021-09-17T04:25:07.803Z"
-}
-}
+#Conclusion
 
-
-
-**Get Blogs Response Structure:**
-{
-"status": true,
-"message": "Blogs list",
-"data": [
-{ ... },
-{ ... }
-]
-}
-
-
-
-**Updated Blog Response Structure:**
-{
-"status": true,
-"message": "Blog updated successfully",
-"data": { ... }
-}
-
-
-**Delete Blog Response Structure:**
-{
-"status": true,
-"message": ""
-}
-
-
-
-**Successful Login Response Structure:**
-{
-"status": true,
-"data": {
-"token": "..."
-}
-}
+The Scalable URL Shortener Project provides a robust and scalable solution for shortening and managing URLs. By implementing caching and optimizing database calls, the project ensures efficient performance even under high traffic scenarios.

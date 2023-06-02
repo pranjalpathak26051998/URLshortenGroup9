@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const validator = require('validator');
-// Define the schema for the URL model
+
+
 const urlSchema = new mongoose.Schema({
   urlCode: {
     type: String,
