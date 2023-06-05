@@ -25,7 +25,7 @@ const GET_ASYNC = promisify(redisClient.GET).bind(redisClient);
 
 const urlShortner = async function (req, res) {
   try {
-    const { longUrl } = req.body;
+    let { longUrl } = req.body;
 
     if(Object.keys(req.body).length == 0) {
       return res.status(400).send({status : false , message : "pls enter url"})
@@ -38,6 +38,8 @@ const urlShortner = async function (req, res) {
     if (!isValid(longUrl)) {
       return res.status(400).send({ status: false, message: "longUrl must be a Valid URL" });
     }
+
+    longUrl = longUrl.trim();
 
     if (!validUrl.isWebUri(longUrl)) {
       return res.status(400).send({ status: false, message: "longUrl must be a Valid URL" });
@@ -65,7 +67,7 @@ const urlShortner = async function (req, res) {
       return res.status(200).send({ status: true, data: {longUrl:urlData.longUrl, shortUrl:urlData.shortUrl, urlCode:urlData.urlCode}});
     }
 
-    const baseUrl = 'http://localhost:3000'; // Replace with your application's base URL
+    const baseUrl = process.env.BASE_URL // Replace with your application's base URL
     const urlCode = shortid.generate();
     const shortUrl = `${baseUrl}/${urlCode}`;
 
