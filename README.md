@@ -1,82 +1,87 @@
-#Scalable URL Shortener Project
+# Scalable URL Shortener Project
 
 This project aims to develop a scalable URL shortener service that generates shorter aliases for long URLs. The shortened aliases, also known as "short links," redirect users to the original URL when accessed. This helps save space, prevents mistyping of long URLs, and provides easy tracking of individual links.
-Phase I
-Overview
 
-#URL shortening is a common practice used to create shorter and more manageable URLs. In this phase, we will focus on the core functionality of the URL shortener service.
+## Phase I
 
-#Models
+### Overview
+
+URL shortening is a common practice used to create shorter and more manageable URLs. In this phase, we will focus on the core functionality of the URL shortener service.
+
+### Models
 
 The project uses a Url model to store the URLs in the database. The model has the following attributes:
 
-    urlCode (mandatory, unique, lowercase, trim): A unique identifier for the shortened URL.
-    longUrl (mandatory, valid URL): The original URL.
-    shortUrl (mandatory, unique): The shortened URL.
+- `urlCode` (mandatory, unique, lowercase, trim): A unique identifier for the shortened URL.
+- `longUrl` (mandatory, valid URL): The original URL.
+- `shortUrl` (mandatory, unique): The shortened URL.
 
-#API Endpoints
+### API Endpoints
 
-    POST /url/shorten
-        Creates a short URL for the provided original URL.
-        
-        Example request body:
-        {
-          "longUrl": "http://example.com/very-long-url"
-        }
+- `POST /url/shorten`: Creates a short URL for the provided original URL.
 
-        Example response:
+    Example request body:
+    ```json
+    {
+      "longUrl": "http://example.com/very-long-url"
+    }
+    ```
 
-        {
-          "status": true,
-          "data": {
-            "longUrl": "http://example.com/very-long-url",
-            "shortUrl": "http://localhost:3000/abc123",
-            "urlCode": "abc123"
-          }
-        }
+    Example response:
+    ```json
+    {
+      "status": true,
+      "data": {
+        "longUrl": "http://example.com/very-long-url",
+        "shortUrl": "http://localhost:3000/abc123",
+        "urlCode": "abc123"
+      }
+    }
+    ```
 
-        Returns HTTP status 400 for an invalid request.
+    Returns HTTP status 400 for an invalid request.
 
-    GET /:urlCode
-        Redirects to the original URL corresponding to the provided urlCode.
-        Returns a suitable error message for a URL not found.
-        Returns HTTP status 400 for an invalid request.
+- `GET /:urlCode`: Redirects to the original URL corresponding to the provided `urlCode`.
 
-#Testing
+    Returns a suitable error message for a URL not found.
+    Returns HTTP status 400 for an invalid request.
 
-    Use Postman to test the API endpoints.
-    Create a new collection named "Project 2 URL Shortener."
-    Add a request to the collection for each API endpoint.
-    Ensure that each request is named correctly.
+### Testing
 
-#Phase II
+- Use Postman to test the API endpoints.
+- Create a new collection named "Project 2 URL Shortener."
+- Add a request to the collection for each API endpoint.
+- Ensure that each request is named correctly.
 
-#Caching
+## Phase II
+
+### Caching
 
 In this phase, we introduce caching to optimize the retrieval of newly created short URLs within the first 24 hours.
 
-    Implement caching logic to store and retrieve the long URLs associated with the short URLs.
-    Use caching to minimize database calls while fetching the shortened URLs.
+- Implement caching logic to store and retrieve the long URLs associated with the short URLs.
+- Use caching to minimize database calls while fetching the shortened URLs.
 
-#Dependencies
+### Dependencies
 
 The project uses the following dependencies:
 
-    ->dotenv: Loads environment variables from a .env file.
-    ->shortid: Generates unique short IDs for the URL codes.
-    ->valid-url: Validates the format of the original URLs.
-    ->redis: A caching solution for storing and retrieving data.
+- `dotenv`: Loads environment variables from a `.env` file.
+- `shortid`: Generates unique short IDs for the URL codes.
+- `valid-url`: Validates the format of the original URLs.
+- `redis`: A caching solution for storing and retrieving data.
 
-Make sure to install these dependencies by running npm install before running the project.
-Setup Instructions
+Make sure to install these dependencies by running `npm install` before running the project.
 
-    Clone the project repository.
-    Install the required dependencies using npm install.
-    Configure the environment variables by creating a .env file.
-    Start the server using npm start.
+### Setup Instructions
+
+1. Clone the project repository.
+2. Install the required dependencies using `npm install`.
+3. Configure the environment variables by creating a `.env` file.
+4. Start the server using `npm start`.
 
 Please refer to the documentation for detailed instructions on environment variable configuration, running the server, and API usage.
 
-#Conclusion
+## Conclusion
 
-The Scalable URL Shortener Project provides a robust and scalable solution for shortening and managing URLs. By implementing caching and optimizing database calls, the project ensures efficient performance even under high traffic scenarios.
+The Scalable URL Shortener Project provides a robust and scalable solution for shortening and managing URLs. By implementing caching and optimizing database calls, the project ensures efficient performance even under high traffic scenarios. Redis is used as a caching solution to improve the retrieval of short URLs and reduce database load.

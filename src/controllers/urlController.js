@@ -35,14 +35,14 @@ const urlShortner = async function (req, res) {
       return res.status(400).send({ status: false, message: "Request body must contain longUrl" });
     }
     if(!validator.isURL(longUrl)){
-      return res.status(400).send({ status: false, message: "longUrl Domain not Allowed" });
+      return res.status(400).send({ status: false, message: "Url Domain not Allowed" });
     }
 
     if (!isValid(longUrl)) {
       return res.status(400).send({ status: false, message: "longUrl must be a Valid URL" });
     }
     if (!validUrl.isWebUri(longUrl)) {
-      return res.status(400).send({ error:'Invalid URL' });
+      return res.status(400).send({ status: false, message: "longUrl must be a Valid URL" });
     }
 
     // Check if the URL already exists in the cache
@@ -91,12 +91,16 @@ const urlShortner = async function (req, res) {
 
 const getUrl = async function (req, res) {
   try {
-    const { urlCode } = req.params;
+    let { urlCode } = req.params;
 
     if (!urlCode) {
       return res.status(400).send({ error: 'urlCode is required' });
     }
 
+    urlCode = urlCode.trim().toLowerCase();
+    
+    // URL convert using the trimmed and lowercase URL code
+    
     // Check if the URL exists in the cache
     let cachedUrl = await GET_ASYNC(`${urlCode}`);
 
