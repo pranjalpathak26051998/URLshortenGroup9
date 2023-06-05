@@ -34,15 +34,17 @@ const urlShortner = async function (req, res) {
     if (!longUrl) {
       return res.status(400).send({ status: false, message: "Request body must contain longUrl" });
     }
-    if(!validator.isURL(longUrl)){
-      return res.status(400).send({ status: false, message: "Url Domain not Allowed" });
-    }
-
+    
     if (!isValid(longUrl)) {
       return res.status(400).send({ status: false, message: "longUrl must be a Valid URL" });
     }
+
     if (!validUrl.isWebUri(longUrl)) {
       return res.status(400).send({ status: false, message: "longUrl must be a Valid URL" });
+    }
+
+    if(!validator.isURL(longUrl)){
+      return res.status(400).send({ status: false, message: "Url Domain not Allowed" });
     }
 
     // Check if the URL already exists in the cache
@@ -59,6 +61,7 @@ const urlShortner = async function (req, res) {
     if (urlData) {
       // Cache the URL for 24 hours
       await SET_ASYNC(`${longUrl}`, JSON.stringify(urlData), 'EX', 24 * 60 * 60);
+
       return res.status(200).send({ status: true, data: {longUrl:urlData.longUrl, shortUrl:urlData.shortUrl, urlCode:urlData.urlCode}});
     }
 
@@ -85,16 +88,18 @@ const urlShortner = async function (req, res) {
     res.status(201).send({ status: true, data: urlResponse });
   } 
   catch (error) {
-    return res.status(500).send({ status: false, message: error.message });
+    console.error(error);
+    return res.status(500).send({  status: false, message: "Internal Server Error" });
   }
 };
 
 const getUrl = async function (req, res) {
   try {
+
     let { urlCode } = req.params;
 
     if (!urlCode) {
-      return res.status(400).send({ error: 'urlCode is required' });
+      return res.status(400).send({ status: false, message: "urlCode is required" });
     }
 
     urlCode = urlCode.trim().toLowerCase();
@@ -117,13 +122,14 @@ const getUrl = async function (req, res) {
       await SET_ASYNC(`${urlCode}`, JSON.stringify({ longUrl: urlData.longUrl }), 'EX', 24 * 60 * 60);
       // Redirect to the original URL
       return res.status(302).redirect(urlData.longUrl);
-    } else {
+    } 
+    else {
       // URL not found in the cache or database
-      return res.status(404).send({ error: 'URL not found' });
+      return res.status(404).send({status: false, message: "URL not found" });
     }
-  } catch (err) {
-    console.error(err);
-    return res.status(500).send({ error: 'Server Error' });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).send({ status: false, message: "Internal Server Error" });
   }
 };
 
