@@ -1,6 +1,7 @@
 const urlModel = require("../models/urlModel");
 require('dotenv').config();
 const validUrl = require('valid-url');
+const validator = require('validator');
 const shortid = require('shortid');
 const { isValid } = require("../utils/validation");
 const redis = require('redis');
@@ -32,6 +33,9 @@ const urlShortner = async function (req, res) {
 
     if (!longUrl) {
       return res.status(400).send({ status: false, message: "Request body must contain longUrl" });
+    }
+    if(!validator.isURL(longUrl)){
+      return res.status(400).send({ status: false, message: "longUrl Domain not Allowed" });
     }
 
     if (!isValid(longUrl)) {
